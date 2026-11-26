@@ -6,6 +6,16 @@ from domain.scent_orders_model import scent_orders
 from domain.powder_lots_model import powder_lots
 from domain.loss_sheets_model import loss_sheets
 from domain.blend_cards_model import blend_cards
+from domain.dryer_schedules_planner import due_sort_key
+
+
+def canonical_due_date(value):
+    if value in (None, ''):
+        return None
+    kind, ordered = due_sort_key(value)
+    if kind == 1:
+        return ordered
+    return str(value).strip()[:32]
 
 
 def receive_order(conn, user, data):
@@ -13,7 +23,10 @@ def receive_order(conn, user, data):
     need(80 <= data.grams <= 1200,'订单须在 80–1200 克')
     need(data.scent in {'WOOD','PAPER'} and data.dryer in {'rack-a','rack-b'},'香型或干燥架未登记')
     labels = label_set(data.declaration)
-    return insert(conn,scent_orders,**(data.model_dump() | {'declaration':sorted(labels),'state':'待耗量','hold_reason':None}))
+    values = data.model_dump(exclude={'due','due_on','due_at','deadline','delivery_date','required_date'})
+    values['declaration'] = sorted(labels)
+    values['due_date'] = canonical_due_date(data.due_date)
+    return insert(conn,scent_orders,**(values | {'state':'待耗量','hold_reason':None}))
 
 
 def clear_hold(conn, user, data):

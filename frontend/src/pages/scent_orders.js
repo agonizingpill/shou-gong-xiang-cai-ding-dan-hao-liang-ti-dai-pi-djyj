@@ -33,6 +33,10 @@
       "label": "干燥架"
     },
     {
+      "name": "due_date",
+      "label": "交期"
+    },
+    {
       "name": "state",
       "label": "订单状态"
     },
@@ -87,6 +91,12 @@
           "label": "干燥架",
           "kind": "text",
           "initial": "rack-a"
+        },
+        {
+          "name": "due_date",
+          "label": "交期（YYYY-MM-DD，越早越优先）",
+          "kind": "text",
+          "initial": "2026-12-01"
         }
       ],
       "help": "在制单前确认原文标签，不接受自由文本解释。",

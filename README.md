@@ -6,7 +6,8 @@
 
 模拟客户为草木间线香作坊。香型契约、粉料损耗回归、等效替料验证、制单；过敏成分声明不一致则冻结工单。
 
-- 香型契约 `scent_orders`，字段为 `title`（订单名称）、`grams`（目标干料 g）、`scent`（香型）、`declaration`（标签原文集合）、`dryer`（干燥架）、`state`（订单状态）、`hold_reason`（冻结说明）。模型约束位于 `backend/domain/scent_orders_model.py`，规则位于 `scent_orders_service.py`。
+- 香型契约 `scent_orders`，字段为 `title`（订单名称）、`grams`（目标干料 g）、`scent`（香型）、`declaration`（标签原文集合）、`dryer`（干燥架）、`due_date`（交期）、`state`（订单状态）、`hold_reason`（冻结说明）。模型约束位于 `backend/domain/scent_orders_model.py`，规则位于 `scent_orders_service.py`。
+- 干燥架排班 `dryer_schedules`，按参考粉料批调用模型估算 `rack-a`/`rack-b` 湿料克数，精确求最大可排单数并以交期更早为同数优先；`dryer_starts` 保留开工时的原架与克数，`dryer_racks` 保存停架状态和并发版本。纯排程算子位于 `backend/domain/dryer_schedules_planner.py`，服务与接口位于 `dryer_schedules_service.py` / `dryer_schedules_api.py`。
 - 粉料批与耗量 `powder_lots`，字段为 `material`（供应批物料）、`scent`（香型）、`declaration`（标签原文集合）、`moisture`（含水百分比）、`batch_grams`（实物余量 g）、`reserved_grams`（已保留 g）。模型约束位于 `backend/domain/powder_lots_model.py`，规则位于 `powder_lots_service.py`。
 - 耗量评估单 `loss_sheets`，字段为 `order_ref`（订单）、`primary_lot`（参考实物批）、`need_g`（计划公斤换算 g）、`loss_g`（预测干燥损耗 g）、`features`（预测与验证证据）。模型约束位于 `backend/domain/loss_sheets_model.py`，规则位于 `loss_sheets_service.py`。
 - 替料制单与核销 `blend_cards`，字段为 `order_ref`（实际订单）、`sheet`（耗量凭证）、`lots`（批号及保留克数）、`grams`（出库累计 g）、`labels`（沿用的标签原文）、`state`（制单状态）。模型约束位于 `backend/domain/blend_cards_model.py`，规则位于 `blend_cards_service.py`。
@@ -53,6 +54,7 @@ Compose 运行 Nginx、Python FastAPI、独立 Redis 消费进程、SQL 数据�
 | 香型契约 | `/scent_orders` /scent_orders/receive-order，/scent_orders/clear-hold | `frontend/src/pages/scent_orders.js` |
 | 粉料批与耗量 | `/powder_lots` /powder_lots/receive-lot | `frontend/src/pages/powder_lots.js` |
 | 耗量评估单 | `/loss_sheets` /loss_sheets/estimate-loss，/loss_sheets/file-loss | `frontend/src/pages/loss_sheets.js` |
+| 干燥架排班 | `/dryer_schedules` /dryer_schedules/draft，/dryer_schedules/finalize，/dryer_schedules/start，/dryer_schedules/stop-dryer | `frontend/src/pages/dryer_schedules.js` |
 | 替料制单与核销 | `/blend_cards` /blend_cards/allocate，/blend_cards/close-weighing | `frontend/src/pages/blend_cards.js` |
 
 SQL 实体与约束在 `backend/domain` 下维护。前端使用原生 ES modules。核心算子为 HistGradientBoostingRegressor。280 条训练、80 条末段留出，展示耗量 MAE、人工固定比例基线和输入哈希。以整数克向上取整为领料量。
